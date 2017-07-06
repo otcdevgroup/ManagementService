@@ -1,2 +1,5 @@
 # ManagementService
-This project's target is developing a management service for otc.
+
+The goal of the project is to develop otc management services.
+
+Please read the documentations in ./doc first.
