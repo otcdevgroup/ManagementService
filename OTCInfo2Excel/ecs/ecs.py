@@ -43,6 +43,8 @@ class ecs(object):
         servers = json.loads(r.text)
         for server in servers['servers']:
             t = self.query_server_detail(server['id'])
+            #m = self.query_server_metrics(server['id'])
+            #va = self.query_server_volumeAttachments(server['id'])
             
             servers_map[server['id']] = t
         return servers_map
@@ -64,6 +66,52 @@ class ecs(object):
         server = json.loads(r.text)
         #print (server)   
         return server['server']   
+    def query_server_volumeAttachments(self, serverid):
+        project_id = self.login.get_project_id()
+        endpoint = "https://ecs.eu-de.otc.t-systems.com" + "/v2/%s/servers/%s/os-volume_attachments"%(project_id, serverid)
+
+        headers ={"Content-type": "application/json","Accept": "application/json"}
+        headers["X-Auth-Token"] = self.login.get_token()
+        
+        #payload = {'name': servername}        
+        #r = requests.get(endpoint, params = payload, headers = headers)    
+        r = requests.get(endpoint, headers = headers)    
+    
+        #print (r.status_code)
+        #print (r.text)   
+        
+        volumeAttachments = json.loads(r.text)
+        #print (volumeAttachments)   
+        return volumeAttachments['volumeAttachments']  
+    
+    def query_server_metrics(self, serverid):
+        #project_id = self.login.get_project_id()
+        #endpoint = "https://ecs.eu-de.otc.t-systems.com" + "/v1.0/%s/servers/%s/action"%(project_id, serverid)
+        #payload = {'monitorMetrics': None} 
+        
+        endpoint = "https://ecs.eu-de.otc.t-systems.com" + "/v1.0/servers/%s/action"%(serverid)
+        
+        headers ={"Content-type": "application/json","Accept": "application/json"}
+        headers["X-Auth-Token"] = self.login.get_token()
+        
+
+        
+        body_text = """
+        {
+            "monitorMetrics":null
+        }
+        """       
+        r = requests.post(endpoint, data=body_text, headers = headers)    
+        
+        
+        print(endpoint)
+        print (r.status_code)
+        print (r.text)   
+        
+        metric = json.loads(r.text)
+        print (metric)   
+        return metric
+    
     
     def query_flavor_detail(self, flavor_id):
         flavor = self.conn.compute.find_flavor(flavor_id)
@@ -76,6 +124,7 @@ class ecs(object):
     def list_vms_array(self):
         vms = []
         hosts = []
+        #all_volumes = self.conn.block_store.volumes()
         servers_map = self.query_servers_detail()
         for serverid in servers_map.keys():
             server = servers_map[serverid]
@@ -100,6 +149,10 @@ class ecs(object):
                 vm.append(image.metadata['__os_version'])
             else:
                 vm.append('NA')    
+            
+            #print(serverid)
+            all_vol_text = self.__get_server_volumes__(serverid) 
+            vm.append(all_vol_text)                 
             #print(vm)
             
             metadata = server['metadata']
@@ -109,6 +162,42 @@ class ecs(object):
                 vms.append(vm)
 
         return vms, hosts
+    
+    def __get_server_volumes__(self, serverid):
+            all_vol_text = ""  
+            text_map = {}
+            all_volumes = self.conn.block_store.volumes()
+            for volume in all_volumes:
+                #print(volume)
+                for one in volume.attachments:
+                    #print(serverid + "=====" + one['server_id'])
+                    if serverid == one['server_id']:
+                        name = volume.name
+                        if "" == name:
+                            name = "-"
+                        volume_type = volume.volume_type
+                        if "SATA" ==  volume_type:
+                            volume_type = "Common I/O"   
+                        elif "SAS" == volume_type:
+                            volume_type = "High I/O"    
+                        elif "uh-l1"  == volume_type:
+                            volume_type = "Ultra-high I/O"  
+                            
+                        one_vol_text = "%s: %s, %s, %dG"%(name, one['device'], volume_type, volume.size)
+                        #print("*** "+one_vol_text)
+                        text_map[one['device']] = one_vol_text
+                          
+                        break
+            for device in sorted(text_map):
+                one_vol_text = text_map[device]
+                if "" ==  all_vol_text and "" != one_vol_text:
+                    all_vol_text += one_vol_text
+                elif "" != one_vol_text:
+                    all_vol_text += "\r\n"+one_vol_text 
+                else:
+                    None          
+            #print(all_vol_text)  
+            return all_vol_text        
     
     def query_routers_detail(self):
         rt_map = {}
@@ -264,6 +353,25 @@ class ecs(object):
         #print(vpc_subnet_vm_layout)  
          
         return vms, vpc_subnet_vm_layout, az_host_vm_layout
+    
+    def query_vm_metrics(self):
+        
+        project_id = self.login.get_project_id()
+        endpoint = "https://ecs.eu-de.otc.t-systems.com" + "/v1.0/%s/servers/metrics"%project_id
+
+        headers ={"Content-type": "application/json","Accept": "application/json"}
+        headers["X-Auth-Token"] = self.login.get_token()
+        
+        #payload = {'name': servername}        
+        #r = requests.get(endpoint, params = payload, headers = headers)    
+        r = requests.get(endpoint, headers = headers)    
+    
+        print (r.status_code)
+        print (r.text)   
+        
+        metrics = json.loads(r.text)
+        print (metrics)   
+        return metrics 
          
     """
      test code

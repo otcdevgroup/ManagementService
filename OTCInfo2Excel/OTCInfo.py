@@ -70,7 +70,7 @@ def xl_OTCInfo():
     vms, hosts = ecs_test.list_vms_array()
     sht = xw.Book.caller().sheets['vm']
     sht.clear_contents()
-    df = pd.DataFrame(vms , columns=['Name', 'PowerState','NumCpu','MemoryGB','VMHost','OSVersion'])
+    df = pd.DataFrame(vms , columns=['Name', 'PowerState','NumCpu','MemoryGB','VMHost','OSVersion','Disks'])
     sht.range('A1').options(index=False).value = df   
     
 
