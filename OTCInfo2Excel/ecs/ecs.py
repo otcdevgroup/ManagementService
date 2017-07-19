@@ -139,8 +139,8 @@ class ecs(object):
                 vm.append("PoweredOff")  
              
             flavor = self.query_flavor_detail(server['flavor']['id'])      
-            vm.append(flavor.vcpus)
-            vm.append(int(int(flavor.ram)/1024))
+            vm.append(str(flavor.vcpus))
+            vm.append(str(int(int(flavor.ram)/1024)))
             
             vm.append(server['OS-EXT-SRV-ATTR:host'])
             
@@ -302,8 +302,8 @@ class ecs(object):
                 vm.append("PoweredOff")  
              
             flavor = self.query_flavor_detail(server['flavor']['id'])      
-            vm.append(flavor.vcpus)
-            vm.append(int(int(flavor.ram)/1024))
+            vm.append(str(flavor.vcpus))
+            vm.append(str(int(int(flavor.ram)/1024)))
             
             vm.append(server['OS-EXT-SRV-ATTR:host'])
             
